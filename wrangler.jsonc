@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "agentic-sdlc-builder-path",
+  "compatibility_date": "2026-06-01",
+  // Static SPA: serve the Vite build output as Cloudflare Workers static assets.
+  // "single-page-application" makes deep links (e.g. /module/hooks) fall back to
+  // index.html so client-side routing works.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}

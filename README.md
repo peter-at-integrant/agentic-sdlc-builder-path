@@ -1,5 +1,7 @@
 # Agentic SDLC Builder Path
 
+**Live:** https://agentic-sdlc-builder-path.petersobhy.workers.dev
+
 An interactive, open learning path for becoming an **Agentic SDLC builder** — ten hands-on modules covering skills, hooks, commands, rules, MCP, sub-agents, routines, plugins, AGENTS.md, and composition. Each module teaches on a four-part depth-review rubric (**why · when/not · quality · composition**), with a lab, a self-check, and a graded quiz. Finish by composing a ≥3-layer proof of concept in the built-in PoC Builder.
 
 Free to run and host. Progress is stored locally in the browser (Phase 1); accounts + GitHub sync land in Phase 2.
@@ -19,22 +21,23 @@ npm run build      # production build → dist/
 npm run preview    # preview the built site
 ```
 
-## Deploy to Cloudflare Pages (free tier)
+## Deploy to Cloudflare (free tier)
 
-**Option A — Git integration (recommended):**
-1. Push this folder to a GitHub repo.
-2. Cloudflare dashboard → Pages → *Create* → *Connect to Git*.
-3. Build command: `npm run build` · Output directory: `dist`.
-4. Deploy. You get a free `*.pages.dev` URL.
+Deployed as a **Cloudflare Worker with static assets** (Cloudflare unified Pages
+into Workers). Config lives in `wrangler.jsonc`, which serves `./dist` and uses
+`not_found_handling: "single-page-application"` for client-side routing.
 
-**Option B — direct upload with Wrangler:**
+**Auto-deploy (current setup):** the repo is connected to Cloudflare Workers
+Builds — every push to `main` builds (`npm run build`) and deploys automatically.
+
+**Manual deploy from the CLI:**
 ```bash
-npm run build
-npx wrangler pages deploy dist --project-name agentic-sdlc-builder-path
+npx wrangler login          # once; opens a browser
+npm run deploy              # runs build + wrangler deploy
 ```
-(`npx wrangler login` first — run it yourself; it opens a browser.)
 
-SPA routing is handled by `public/_redirects` (`/* /index.html 200`).
+Requires **Node 20+** on the build (set `NODE_VERSION=20` in the Cloudflare
+project if needed).
 
 ## Roadmap
 

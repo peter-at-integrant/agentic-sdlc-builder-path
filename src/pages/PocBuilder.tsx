@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import AiIdeas from '../components/AiIdeas'
 
 interface Layer {
   id: string
@@ -146,6 +147,11 @@ export default function PocBuilder() {
             {chosen.length < 3 ? `Select ${3 - chosen.length} more layer(s) to reach the minimum.` : ''}
           </p>
         )}
+      </section>
+
+      {/* Optional: AI brainstorm (bring your own key) */}
+      <section className="mt-6">
+        <AiIdeas layers={chosen.map((l) => l.label)} problem={problem} />
       </section>
 
       {/* Step 3 */}

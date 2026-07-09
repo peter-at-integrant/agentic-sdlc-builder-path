@@ -112,7 +112,32 @@ In Claude Code (v2.1.199+), custom commands *are* skills under the hood. So "com
 - **Team vocabulary** — name it what the team already says.
 - **Pre-approved tools** — \`allowed-tools\` so the fast path stays fast.`,
     composition: `Command → loads a skill's steps → **rules** constrain them → may call **MCP** → a **hook** can verify before a side effect (e.g. a branch check before push). A command is often the *entry point* of a composed flow.`,
-    reference: `\`\`\`markdown
+    reference: `**How each is triggered** — the real difference is whether the *agent* can trigger it, not just you.
+
+| Trigger path | Skill (model-invocable) | Command (\`disable-model-invocation: true\`) |
+|---|---|---|
+| You, manually via \`/name\` | ✅ yes | ✅ yes |
+| The agent, automatically | ✅ when your request matches its \`description\` | ❌ never |
+| Typical intent | recognize & apply when relevant | run only when explicitly asked |
+
+**Ways to trigger**
+- **Manual slash:** \`/open-pr\` or \`/open-pr "fix: bump base image"\`
+- **Stacked (up to 6):** \`/review /open-pr do it\`
+- **Automatic (skills only):** say *"summarize my uncommitted changes"* and the agent invokes the matching skill itself — a command won't fire this way
+- **Arguments** flow in via \`$ARGUMENTS\`, \`$N\`, or a named \`$name\`
+
+**Frontmatter that controls triggering**
+\`\`\`markdown
+---
+description: What it does + trigger words   # matched for auto-invocation
+disable-model-invocation: true              # -> "command": manual-only
+user-invocable: false                       # agent-only: hidden from the / menu
+arguments: [title]                          # enables $title / $ARGUMENTS
+---
+\`\`\`
+
+**Example command**
+\`\`\`markdown
 ---
 name: open-pr
 description: Open a pull request for the current branch into main.
@@ -128,7 +153,9 @@ allowed-tools: Bash
 4. Report the PR URL.
 \`\`\`
 
-Invoke: \`/open-pr "fix: bump base image"\`. Stack up to 6: \`/review /open-pr do it\`.`,
+Invoke: \`/open-pr "fix: bump base image"\`. Stack up to 6: \`/review /open-pr do it\`.
+
+**One-liner:** a command is a *manual-only skill*; a skill can also be summoned automatically by the agent — that automatic path is the whole difference.`,
     lab: `1. **Write the decision note** — one short paragraph "command vs skill". Park it in your AGENTS.md.
 2. **Ship one new parameterized command** with documented args, defaults, and a safety note.
 3. **Dry-run with someone** — they run it from the description alone; if they hesitate on an arg, tighten the hint/description.`,

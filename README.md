@@ -41,9 +41,10 @@ project if needed).
 
 ## Roadmap
 
-- **Phase 1 (this):** interactive core — modules, labs, self-checks, graded quizzes, PoC Builder, local progress.
-- **Phase 2:** GitHub OAuth login + Cloudflare Pages Functions + D1 for cross-device synced progress.
-- **Phase 3:** read-only GitHub repo linking — pick a practice repo, auto-detect `.claude/` artifacts to check sub-goals.
+- **Phase 1 (shipped):** interactive core — modules, labs, self-checks, graded quizzes, PoC Builder, local progress.
+- **AI brainstorm — bring-your-own-key (shipped):** in the PoC Builder, paste your own Anthropic API key to have Claude invent agentic app ideas that exercise your selected layers. The key is stored only in your browser and calls Anthropic directly (`dangerouslyAllowBrowser`) — never sent to any server; no backend, no login, no cost to the site. Model selector (Opus 4.8 / Haiku 4.5); the SDK is code-split so it loads only on first generate.
+- **Phase 2 (planned):** GitHub OAuth login + Cloudflare Pages Functions + D1 for cross-device synced progress.
+- **Phase 3 (planned):** read-only GitHub repo linking — pick a practice repo, auto-detect `.claude/` artifacts to check sub-goals.
 
 ## License
 

@@ -7,6 +7,7 @@ import ModulePage from './pages/ModulePage'
 import Dashboard from './pages/Dashboard'
 import GlossaryPage from './pages/GlossaryPage'
 import PocBuilder from './pages/PocBuilder'
+import Example from './pages/Example'
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/glossary" element={<GlossaryPage />} />
           <Route path="/poc" element={<PocBuilder />} />
+          <Route path="/example" element={<Example />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

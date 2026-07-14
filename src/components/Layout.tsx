@@ -78,6 +78,7 @@ export default function Layout() {
             {[
               ['/modules', 'Modules'],
               ['/poc', 'PoC Builder'],
+              ['/example', 'Example'],
               ['/glossary', 'Glossary'],
               ['/dashboard', 'Dashboard'],
             ].map(([to, label]) => (

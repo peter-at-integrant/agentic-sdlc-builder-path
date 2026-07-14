@@ -7,10 +7,12 @@ export interface AppState {
   completed: Record<string, boolean>
   /** module id → best quiz score (0..1) */
   quizScores: Record<string, number>
+  /** build-guide step key ("<layerId>#<criterionIndex>") → done */
+  buildSteps: Record<string, boolean>
   theme: 'light' | 'dark'
 }
 
-const empty: AppState = { completed: {}, quizScores: {}, theme: 'light' }
+const empty: AppState = { completed: {}, quizScores: {}, buildSteps: {}, theme: 'light' }
 
 export function loadState(): AppState {
   try {

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import AiIdeas from '../components/AiIdeas'
+import BuildGuide from '../components/BuildGuide'
 
 interface Layer {
   id: string
@@ -210,6 +211,9 @@ export default function PocBuilder() {
           </pre>
         </section>
       )}
+
+      {/* Step 4 — guided build */}
+      {enough && <BuildGuide problem={problem} layers={chosen} />}
     </div>
   )
 }

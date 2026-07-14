@@ -6,6 +6,7 @@ interface Store {
   state: AppState
   toggleComplete: (id: string) => void
   setQuizScore: (id: string, score: number) => void
+  toggleBuildStep: (key: string) => void
   toggleTheme: () => void
   resetProgress: () => void
   completedCount: number
@@ -39,12 +40,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  const toggleBuildStep = useCallback((key: string) => {
+    setState((s) => ({ ...s, buildSteps: { ...s.buildSteps, [key]: !s.buildSteps[key] } }))
+  }, [])
+
   const toggleTheme = useCallback(() => {
     setState((s) => ({ ...s, theme: s.theme === 'dark' ? 'light' : 'dark' }))
   }, [])
 
   const resetProgress = useCallback(() => {
-    setState((s) => ({ ...s, completed: {}, quizScores: {} }))
+    setState((s) => ({ ...s, completed: {}, quizScores: {}, buildSteps: {} }))
   }, [])
 
   const completedCount = useMemo(
@@ -56,6 +61,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     state,
     toggleComplete,
     setQuizScore,
+    toggleBuildStep,
     toggleTheme,
     resetProgress,
     completedCount,

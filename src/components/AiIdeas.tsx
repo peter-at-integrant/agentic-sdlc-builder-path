@@ -1,14 +1,23 @@
 import { useState } from 'react'
 import Markdown from './Markdown'
 import { MODELS, type ModelId, getApiKey, setApiKey, clearApiKey } from '../lib/keyStore'
+import type { Idea, LayerRef } from '../lib/anthropic'
 
-export default function AiIdeas({ layers, problem }: { layers: string[]; problem: string }) {
+export default function AiIdeas({
+  layers,
+  problem,
+  onUse,
+}: {
+  layers: LayerRef[]
+  problem: string
+  onUse: (problem: string, layerIds: string[]) => void
+}) {
   const [key, setKey] = useState(() => getApiKey())
   const [saved, setSaved] = useState(() => !!getApiKey())
   const [model, setModel] = useState<ModelId>('claude-opus-4-8')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [ideas, setIdeas] = useState('')
+  const [ideas, setIdeas] = useState<Idea[]>([])
 
   const canGenerate = saved && key && layers.length >= 1 && !loading
 
@@ -21,18 +30,17 @@ export default function AiIdeas({ layers, problem }: { layers: string[]; problem
     clearApiKey()
     setKey('')
     setSaved(false)
-    setIdeas('')
+    setIdeas([])
   }
 
   const run = async () => {
     setLoading(true)
     setError('')
-    setIdeas('')
-    // Dynamic import: the Anthropic SDK chunk loads only now, on first generate.
+    setIdeas([])
     const { generateIdeas, describeError } = await import('../lib/anthropic')
     try {
-      const text = await generateIdeas({ apiKey: key.trim(), model, layers, problem })
-      setIdeas(text)
+      const result = await generateIdeas({ apiKey: key.trim(), model, layers, problem })
+      setIdeas(result)
     } catch (e) {
       setError(describeError(e))
     } finally {
@@ -49,15 +57,14 @@ export default function AiIdeas({ layers, problem }: { layers: string[]; problem
         </span>
       </div>
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-        Stuck on what to build? Let Claude invent agentic app ideas that use your selected layers.
+        Stuck on what to build? Claude invents agentic ideas — in <strong>any domain</strong>, technical or not — that
+        use your selected layers. Pick one to auto-fill the builder.
       </p>
 
       {/* Key management */}
       {!saved ? (
         <div className="mt-3">
-          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
-            Your Anthropic API key
-          </label>
+          <label className="text-xs font-medium text-slate-600 dark:text-slate-300">Your Anthropic API key</label>
           <div className="mt-1 flex gap-2">
             <input
               type="password"
@@ -104,7 +111,7 @@ export default function AiIdeas({ layers, problem }: { layers: string[]; problem
             disabled={!canGenerate}
             className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-brand-700 disabled:opacity-40"
           >
-            {loading ? 'Generating…' : ideas ? 'Regenerate' : 'Generate ideas'}
+            {loading ? 'Generating…' : ideas.length ? 'Regenerate' : 'Generate ideas'}
           </button>
           <button
             onClick={forget}
@@ -125,9 +132,31 @@ export default function AiIdeas({ layers, problem }: { layers: string[]; problem
         </p>
       )}
 
-      {ideas && (
-        <div className="mt-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-          <Markdown>{ideas}</Markdown>
+      {ideas.length > 0 && (
+        <div className="mt-3 space-y-3">
+          {ideas.map((idea, i) => (
+            <div key={i} className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h4 className="font-semibold text-slate-900 dark:text-slate-100">{idea.name}</h4>
+                  {idea.pitch && <p className="text-sm text-slate-600 dark:text-slate-300">{idea.pitch}</p>}
+                </div>
+                {idea.problem && (
+                  <button
+                    onClick={() => onUse(idea.problem, idea.layers)}
+                    className="shrink-0 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                  >
+                    Use this idea →
+                  </button>
+                )}
+              </div>
+              {idea.details && (
+                <div className="mt-2 border-t border-slate-100 pt-2 dark:border-slate-800">
+                  <Markdown>{idea.details}</Markdown>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>

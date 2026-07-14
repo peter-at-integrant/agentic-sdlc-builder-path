@@ -20,12 +20,25 @@ const LAYERS: Layer[] = [
   { id: 'plugin', label: 'Plugin + AGENTS.md', role: 'packages and routes the whole stack for reuse', gap: 'every repo drifts; no single source of truth' },
 ]
 
-const PRESETS: Record<string, string> = {
-  'DevOps: recurring CVE patch': 'Patch this cycle’s base-image CVEs across services',
-  'Support: ticket triage': 'Triage incoming support tickets and draft first responses',
-  'Personal: time-tracking watcher': 'Detect what I’m working on and log time into my tracker',
-  'Content: weekly digest': 'Summarize the week’s activity into a shareable digest',
-}
+// Diverse, mostly non-technical presets — an agentic PoC can solve any problem.
+const PRESETS: { label: string; value: string }[] = [
+  { label: '🧳 Travel', value: 'Recommend a country and a rough itinerary that matches my mood, budget, and interests, based on a short interview.' },
+  { label: '🏃 Health', value: 'Plan and adjust my weekly workouts and meals around my real schedule, energy, and goals.' },
+  { label: '📚 Learning', value: 'Build and continuously adjust a study plan for a topic based on my free time and quiz results.' },
+  { label: '🍳 Food', value: 'Suggest this week’s meals and a shopping list from what’s already in my kitchen and my diet.' },
+  { label: '🛠️ DevOps', value: 'Patch this cycle’s base-image CVEs across services.' },
+]
+
+// "Surprise me" draws from a wider pool spanning many everyday domains.
+const SURPRISE_POOL: string[] = [
+  ...PRESETS.map((p) => p.value),
+  'Plan a weekend that fits my energy, the weather, and who’s free — then book it.',
+  'Track my subscriptions, warn me before each renewal, and suggest what to cancel.',
+  'Turn my messy reading list into a weekly digest matched to my current interests.',
+  'Coach my job search: tailor each application and follow up on the right day.',
+  'Plan a date night matched to our moods and budget, then handle the reservation.',
+  'Watch my houseplants’ care schedule and remind me what needs water or light today.',
+]
 
 export default function PocBuilder() {
   const [problem, setProblem] = useState('')
@@ -34,6 +47,20 @@ export default function PocBuilder() {
 
   const chosen = LAYERS.filter((l) => selected[l.id])
   const enough = chosen.length >= 3 && problem.trim().length > 0
+
+  const surprise = () => setProblem(SURPRISE_POOL[Math.floor(Math.random() * SURPRISE_POOL.length)])
+
+  const useIdea = (p: string, layerIds: string[]) => {
+    setProblem(p)
+    setSelected((s) => {
+      const next = { ...s }
+      layerIds.forEach((id) => {
+        next[id] = true
+      })
+      return next
+    })
+    setTimeout(() => document.getElementById('poc-blueprint')?.scrollIntoView({ behavior: 'smooth' }), 150)
+  }
 
   const markdown = useMemo(() => {
     if (!enough) return ''
@@ -91,22 +118,32 @@ export default function PocBuilder() {
       {/* Step 1 */}
       <section className="mt-8">
         <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">1 · Pick a real problem</h2>
+        <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
+          Solve <strong>any</strong> real problem — technical or not. Travel, health, learning, a hobby… your PoC just
+          needs to exercise ≥3 layers.
+        </p>
         <input
           value={problem}
           onChange={(e) => setProblem(e.target.value)}
-          placeholder="e.g. Patch this cycle’s base-image CVEs across services"
+          placeholder="e.g. Recommend a trip that matches my mood, budget, and interests"
           className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 dark:border-slate-700 dark:bg-slate-900 dark:focus:ring-brand-900/40"
         />
         <div className="mt-2 flex flex-wrap gap-2">
-          {Object.entries(PRESETS).map(([label, val]) => (
+          {PRESETS.map((p) => (
             <button
-              key={label}
-              onClick={() => setProblem(val)}
+              key={p.label}
+              onClick={() => setProblem(p.value)}
               className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-600 hover:border-brand-300 hover:text-brand-600 dark:border-slate-700 dark:text-slate-300"
             >
-              {label}
+              {p.label}
             </button>
           ))}
+          <button
+            onClick={surprise}
+            className="rounded-full border border-brand-300 bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700 hover:bg-brand-100 dark:border-brand-700 dark:bg-brand-900/20 dark:text-brand-300"
+          >
+            🎲 Surprise me
+          </button>
         </div>
       </section>
 
@@ -151,12 +188,12 @@ export default function PocBuilder() {
 
       {/* Optional: AI brainstorm (bring your own key) */}
       <section className="mt-6">
-        <AiIdeas layers={chosen.map((l) => l.label)} problem={problem} />
+        <AiIdeas layers={chosen} problem={problem} onUse={useIdea} />
       </section>
 
       {/* Step 3 */}
       {enough && (
-        <section className="mt-8">
+        <section id="poc-blueprint" className="mt-8">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">3 · Your PoC blueprint</h2>
             <div className="flex gap-2">

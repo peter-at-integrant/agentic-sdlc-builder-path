@@ -116,6 +116,62 @@ Provide 2-3 ideas. Each should cover MOST of the target layers.`
   }
 }
 
+export interface SpecParams {
+  apiKey: string
+  model: ModelId
+  problem: string
+  layers: LayerRef[]
+}
+
+const SPEC_SYSTEM = `You are a product strategist helping someone flesh out an agentic-solution idea into a
+business-level product spec — the kind a founder or PM sketches before building. The idea can be
+ANY domain (travel, health, learning, food, DevOps, etc.), technical or not.
+
+Give the product a short working name, then produce a business-FIRST Markdown spec with EXACTLY
+these four sections and headings:
+
+## 1. The one-liner & who it's for
+A one-sentence value proposition as a Markdown blockquote, then a line starting "Users:".
+
+## 2. End-to-end workflow
+A numbered list of the steps the business imagines, phrased as a flow (intake → ... → learn/refine).
+
+## 3. Feature list (grouped, MVP vs later)
+Grouped into lettered areas (A, B, C, ...), each with a short title and bullet features. Tag EACH
+bullet with (MVP) or (v2).
+
+## 4. How the workflow maps to the agentic layers
+A Markdown table with columns "Layer" and "In <ProductName>", one row per provided target layer,
+describing that layer's concrete role in this product.
+
+Keep it business-first and concrete; avoid deep technical implementation detail. No preamble and no
+closing remarks — start directly at "## 1.".`
+
+export async function generateSpec({ apiKey, model, problem, layers }: SpecParams): Promise<string> {
+  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
+
+  const targetLayers = layers.length
+    ? layers.map((l) => l.label).join(', ')
+    : 'Skill/command, Sub-agents, Rules, MCP, Hook, Routine/automation, Composition'
+
+  const prompt = `Idea / problem: "${problem.trim()}".
+Target agentic layers to reflect in the section-4 mapping: ${targetLayers}.
+Write the product spec.`
+
+  const resp = await client.messages.create({
+    model,
+    max_tokens: 4000,
+    system: SPEC_SYSTEM,
+    messages: [{ role: 'user', content: prompt }],
+  })
+
+  return resp.content
+    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+    .map((b) => b.text)
+    .join('\n')
+    .trim()
+}
+
 export function describeError(e: unknown): string {
   if (e instanceof Anthropic.AuthenticationError) return 'Invalid API key (401). Check the key and try again.'
   if (e instanceof Anthropic.PermissionDeniedError) return 'Key lacks permission for this model (403).'

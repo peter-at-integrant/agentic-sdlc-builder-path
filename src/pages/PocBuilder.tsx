@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import AiIdeas from '../components/AiIdeas'
+import ProductSpec from '../components/ProductSpec'
 import BuildGuide from '../components/BuildGuide'
 
 interface Layer {
@@ -191,6 +192,13 @@ export default function PocBuilder() {
       <section className="mt-6">
         <AiIdeas layers={chosen} problem={problem} onUse={useIdea} />
       </section>
+
+      {/* Optional: spec the chosen idea out as a product */}
+      {problem.trim() && (
+        <section className="mt-4">
+          <ProductSpec problem={problem} layers={chosen} />
+        </section>
+      )}
 
       {/* Step 3 */}
       {enough && (

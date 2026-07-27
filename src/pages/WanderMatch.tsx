@@ -224,9 +224,24 @@ export default function WanderMatch() {
 
         <div className="grid gap-4 border-t border-slate-100 pt-4 dark:border-slate-800 sm:grid-cols-2">
           <Field label="Budget ceiling (total)">
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <input type="number" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="e.g. 800" className={`w-28 ${input}`} />
               <input value={currency} onChange={(e) => setCurrency(e.target.value)} className={`w-20 ${input}`} />
+            </div>
+            <input
+              type="range"
+              min={200}
+              max={5000}
+              step={50}
+              value={Math.min(5000, Math.max(200, Number(budget) || 200))}
+              onChange={(e) => setBudget(e.target.value)}
+              className="mt-2 w-full accent-brand-600"
+              aria-label="Budget slider"
+            />
+            <div className="flex justify-between text-[10px] text-slate-400">
+              <span>$200</span>
+              <span className="font-medium text-slate-500 dark:text-slate-300">{budget ? `${currency} ${Number(budget).toLocaleString()}` : 'drag or type'}</span>
+              <span>$5,000+</span>
             </div>
           </Field>
           <Field label="Trip length (days)">

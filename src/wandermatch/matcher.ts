@@ -77,7 +77,7 @@ Process:
 5. Rank; split into ✓ Recommended (passes everything: advisory<=2 known, climate matches, total<=budget) and ⚠ Alternatives (fill to 3), each flagged with its gap.
 
 When done, output ONLY this JSON (no prose, no code fence):
-{"picks":[{"destination":"City, Country","tier":"recommended|alternative","advisory_level":<number|null>,"days":<n>,"total_usd":<n|null>,"budget_usd":<n>,"why":"...","facts":"climate + cost/fare breakdown","gap":"<reason if alternative, else null>"}]}
+{"assumptions":"one short sentence naming any timing/month you assumed for climate (especially if the user gave no month) so the traveler can correct it","picks":[{"destination":"City, Country","tier":"recommended|alternative","advisory_level":<number|null>,"days":<n>,"total_usd":<n|null>,"budget_usd":<n>,"why":"...","facts":"climate + cost/fare breakdown","gap":"<reason if alternative, else null>"}]}
 Provide 3 picks. Never fabricate climate/cost/fare/advisory; if a tool returns unknown, flag it.`
 
 function extractJson(text: string): string {
@@ -94,6 +94,7 @@ export interface RunResult {
   trace: TraceEntry[]
   raw: string
   usage: UsageSummary
+  assumptions?: string
 }
 
 export async function runMatcher(opts: {
@@ -197,7 +198,8 @@ export async function runMatcher(opts: {
     try {
       const parsed = JSON.parse(extractJson(raw))
       const picks: Pick[] = Array.isArray(parsed?.picks) ? parsed.picks : []
-      return { picks, trace, raw, usage: buildUsage() }
+      const assumptions = typeof parsed?.assumptions === 'string' ? parsed.assumptions : undefined
+      return { picks, trace, raw, usage: buildUsage(), assumptions }
     } catch {
       return { picks: [], trace, raw, usage: buildUsage() }
     }

@@ -84,14 +84,17 @@ export default function WanderMatch() {
   const [error, setError] = useState('')
   const [picks, setPicks] = useState<Pick[] | null>(null)
   const [actions, setActions] = useState<string[]>([])
+  const [assumptions, setAssumptions] = useState('')
   const [raw, setRaw] = useState('')
 
   const canRun = saved && key && origin.trim() && Number(budget) > 0 && Number(tripMin) > 0 && !running
 
-  const run = async () => {
+  const run = async (budgetOverride?: number) => {
+    const budgetAmount = budgetOverride ?? Number(budget)
     setError('')
     setPicks(null)
     setActions([])
+    setAssumptions('')
     setRaw('')
     setTrace([])
     setUsage(null)
@@ -101,7 +104,7 @@ export default function WanderMatch() {
     try {
       const profile = {
         mood: [...mood, ...(moodOther.trim() ? [moodOther.trim()] : [])],
-        budget_ceiling: { amount: Number(budget), currency },
+        budget_ceiling: { amount: budgetAmount, currency },
         dates_flexibility: dates[0] ?? 'flexible',
         target_window: windowText.trim(),
         party: party[0] ?? '',
@@ -116,6 +119,7 @@ export default function WanderMatch() {
       setPicks(enforced.picks)
       setActions(enforced.actions)
       if (!enforced.picks.length) setRaw(r.raw)
+      setAssumptions(r.assumptions ?? '')
       setUsage(r.usage)
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
       const label = `${runLabel.trim()} [cache ${cache ? 'on' : 'off'}]`.trim()
@@ -261,7 +265,7 @@ export default function WanderMatch() {
 
         <div className="flex flex-wrap items-center gap-3">
           <button
-            onClick={run}
+            onClick={() => run()}
             disabled={!canRun}
             className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-40"
           >
@@ -308,11 +312,31 @@ export default function WanderMatch() {
         </div>
       )}
 
+      {/* Clarifier — surface the agent's timing assumption so the traveler can correct it */}
+      {assumptions && picks && picks.length > 0 && (
+        <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50/60 p-3 text-sm dark:border-sky-900/50 dark:bg-sky-900/15">
+          <span className="font-medium text-sky-800 dark:text-sky-300">💭 Worth your call:</span>{' '}
+          <span className="text-sky-700 dark:text-sky-300/90">{assumptions}</span>{' '}
+          <span className="text-sky-600/80 dark:text-sky-400/80">
+            — edit the <strong>Target window</strong> above and re-match to override.
+          </span>
+        </div>
+      )}
+
       {/* Results */}
       {picks && picks.length > 0 && (
         <div className="mt-4 space-y-3">
           {picks.map((p, i) => {
             const rec = p.tier === 'recommended'
+            const budgetNum = Number(budget)
+            // Budget near-miss: an alternative that's safe + priced, over budget by a
+            // small margin. Bumping the budget would likely flip it to Recommended.
+            const shortfall =
+              !rec && typeof p.total_usd === 'number' && typeof p.advisory_level === 'number' && p.advisory_level <= 2
+                ? p.total_usd - budgetNum
+                : 0
+            const nearMiss = shortfall > 0 && shortfall <= Math.max(50, budgetNum * 0.15)
+            const raiseTo = nearMiss ? Math.ceil(p.total_usd as number) : 0
             return (
               <div key={i} className={`rounded-xl border p-4 ${rec ? 'border-emerald-300 bg-emerald-50/40 dark:border-emerald-800 dark:bg-emerald-900/10' : 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'}`}>
                 <div className="flex items-center gap-2">
@@ -325,6 +349,24 @@ export default function WanderMatch() {
                 {p.why && <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">{p.why}</p>}
                 {p.facts && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{p.facts}</p>}
                 {!rec && p.gap && <p className="mt-1 text-xs font-medium text-amber-600 dark:text-amber-400">Gap: {p.gap}</p>}
+                {nearMiss && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-brand-50 px-2.5 py-1.5 text-xs dark:bg-brand-900/20">
+                    <span className="text-brand-800 dark:text-brand-200">
+                      💡 Over by <strong>{currency} {Math.round(shortfall).toLocaleString()}</strong>. Raising your budget to{' '}
+                      <strong>{currency} {raiseTo.toLocaleString()}</strong> would likely make it ✓ Recommended.
+                    </span>
+                    <button
+                      onClick={() => {
+                        setBudget(String(raiseTo))
+                        run(raiseTo)
+                      }}
+                      disabled={running}
+                      className="ml-auto rounded bg-brand-600 px-2.5 py-1 font-semibold text-white hover:bg-brand-700 disabled:opacity-40"
+                    >
+                      Raise &amp; re-match
+                    </button>
+                  </div>
+                )}
               </div>
             )
           })}

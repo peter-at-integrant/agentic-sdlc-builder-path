@@ -74,6 +74,7 @@ export default function WanderMatch() {
   const [key, setKey] = useState(() => getApiKey())
   const [saved, setSaved] = useState(() => !!getApiKey())
   const [model, setModel] = useState<ModelId>('claude-opus-4-8')
+  const [cache, setCache] = useState(true)
   const [running, setRunning] = useState(false)
   const [trace, setTrace] = useState<TraceEntry[]>([])
   const [showDebug, setShowDebug] = useState(false)
@@ -110,14 +111,15 @@ export default function WanderMatch() {
         origin: origin.trim(),
         trip_length_days: { min: Number(tripMin), max: Number(tripMax || tripMin) },
       }
-      const r = await runMatcher({ apiKey: key.trim(), model, profile, onEvent: (e) => setTrace((t) => [...t, e]) })
+      const r = await runMatcher({ apiKey: key.trim(), model, profile, cache, onEvent: (e) => setTrace((t) => [...t, e]) })
       const enforced = enforce(r.picks)
       setPicks(enforced.picks)
       setActions(enforced.actions)
       if (!enforced.picks.length) setRaw(r.raw)
       setUsage(r.usage)
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-      appendRun(runFromSummary(r.usage, id, Date.now(), runLabel))
+      const label = `${runLabel.trim()} [cache ${cache ? 'on' : 'off'}]`.trim()
+      appendRun(runFromSummary(r.usage, id, Date.now(), label))
     } catch (e) {
       setError(describeError(e))
     } finally {
@@ -175,6 +177,13 @@ export default function WanderMatch() {
               </option>
             ))}
           </select>
+          <label
+            className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-600 dark:border-slate-700 dark:text-slate-300"
+            title="Lever #1 — cache the tools+system prefix. Toggle off to capture a pre-caching baseline for the benchmark."
+          >
+            <input type="checkbox" checked={cache} onChange={(e) => setCache(e.target.checked)} />
+            prompt caching
+          </label>
           <button
             onClick={() => {
               clearApiKey()

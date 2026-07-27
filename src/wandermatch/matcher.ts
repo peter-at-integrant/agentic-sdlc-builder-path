@@ -100,9 +100,10 @@ export async function runMatcher(opts: {
   apiKey: string
   model: ModelId
   profile: Profile
+  cache?: boolean
   onEvent?: (e: TraceEntry) => void
 }): Promise<RunResult> {
-  const { apiKey, model, profile, onEvent } = opts
+  const { apiKey, model, profile, onEvent, cache = true } = opts
   const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
   const trace: TraceEntry[] = []
   const emit = (e: TraceEntry) => {
@@ -117,9 +118,12 @@ export async function runMatcher(opts: {
   // Optimization lever #1: cache the static prefix (tools + system prompt).
   // In a tool-use loop this prefix is re-sent on every round-trip; a cache
   // breakpoint on the system block lets rounds 2+ re-read it at ~0.1x instead of
-  // reprocessing it at full input price. The benchmark measures the delta.
+  // reprocessing it at full input price. `cache` toggles it off so the benchmark
+  // can capture a clean pre-caching baseline.
   const system: Anthropic.TextBlockParam[] = [
-    { type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } },
+    cache
+      ? { type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }
+      : { type: 'text', text: SYSTEM },
   ]
 
   // Usage benchmark accounting.

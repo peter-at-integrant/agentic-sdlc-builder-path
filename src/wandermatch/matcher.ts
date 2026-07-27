@@ -38,6 +38,32 @@ export interface TraceEntry {
   detail?: string
 }
 
+// Per round-trip token anatomy — the raw material for the usage benchmark.
+export interface MsgUsage {
+  round: number
+  uncached_input: number
+  cache_read: number
+  cache_creation: number
+  output: number
+}
+
+export interface UsageSummary {
+  model: ModelId
+  rounds: number
+  toolCalls: number
+  perMessage: MsgUsage[]
+  totals: {
+    uncached_input: number
+    cache_read: number
+    cache_creation: number
+    output: number
+    total_input: number
+    total: number
+  }
+  cacheHitRate: number
+  durationMs: number
+}
+
 const SYSTEM = `You are the WanderMatch matcher. Given a traveler profile, return 3 destinations ranked by fit.
 You are READ-ONLY: propose and explain; never book.
 
@@ -67,6 +93,7 @@ export interface RunResult {
   picks: Pick[]
   trace: TraceEntry[]
   raw: string
+  usage: UsageSummary
 }
 
 export async function runMatcher(opts: {
@@ -87,6 +114,32 @@ export async function runMatcher(opts: {
     { role: 'user', content: `Traveler profile:\n${JSON.stringify(profile, null, 2)}\n\nProduce the shortlist.` },
   ]
 
+  // Usage benchmark accounting.
+  const perMessage: MsgUsage[] = []
+  let toolCalls = 0
+  const startedAt = Date.now()
+  const buildUsage = (): UsageSummary => {
+    const totals = perMessage.reduce(
+      (a, m) => ({
+        uncached_input: a.uncached_input + m.uncached_input,
+        cache_read: a.cache_read + m.cache_read,
+        cache_creation: a.cache_creation + m.cache_creation,
+        output: a.output + m.output,
+      }),
+      { uncached_input: 0, cache_read: 0, cache_creation: 0, output: 0 },
+    )
+    const total_input = totals.uncached_input + totals.cache_read + totals.cache_creation
+    return {
+      model,
+      rounds: perMessage.length,
+      toolCalls,
+      perMessage,
+      totals: { ...totals, total_input, total: total_input + totals.output },
+      cacheHitRate: total_input > 0 ? totals.cache_read / total_input : 0,
+      durationMs: Date.now() - startedAt,
+    }
+  }
+
   for (let i = 0; i < 14; i++) {
     const resp = await client.messages.create({
       model,
@@ -96,6 +149,15 @@ export async function runMatcher(opts: {
       messages,
     })
 
+    const u = resp.usage
+    perMessage.push({
+      round: i + 1,
+      uncached_input: u.input_tokens ?? 0,
+      cache_read: u.cache_read_input_tokens ?? 0,
+      cache_creation: u.cache_creation_input_tokens ?? 0,
+      output: u.output_tokens ?? 0,
+    })
+
     if (resp.stop_reason === 'tool_use') {
       messages.push({ role: 'assistant', content: resp.content })
       const results: Anthropic.ToolResultBlockParam[] = []
@@ -103,6 +165,7 @@ export async function runMatcher(opts: {
         if (block.type === 'text' && block.text.trim()) {
           emit({ kind: 'assistant', label: 'assistant', detail: block.text.trim() })
         } else if (block.type === 'tool_use') {
+          toolCalls++
           emit({ kind: 'tool_use', label: block.name, detail: JSON.stringify(block.input, null, 2) })
           const out = await runTool(block.name, block.input as any)
           emit({ kind: 'tool_result', label: `${block.name} → result`, detail: JSON.stringify(out, null, 2) })
@@ -122,9 +185,9 @@ export async function runMatcher(opts: {
     try {
       const parsed = JSON.parse(extractJson(raw))
       const picks: Pick[] = Array.isArray(parsed?.picks) ? parsed.picks : []
-      return { picks, trace, raw }
+      return { picks, trace, raw, usage: buildUsage() }
     } catch {
-      return { picks: [], trace, raw }
+      return { picks: [], trace, raw, usage: buildUsage() }
     }
   }
   throw new Error('Matcher did not converge (too many tool rounds).')

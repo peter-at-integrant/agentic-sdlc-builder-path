@@ -80,6 +80,7 @@ export default function Layout() {
               ['/poc', 'PoC Builder'],
               ['/example', 'Example'],
               ['/wandermatch', 'WanderMatch'],
+              ['/usage', 'Usage'],
               ['/glossary', 'Glossary'],
               ['/dashboard', 'Dashboard'],
             ].map(([to, label]) => (

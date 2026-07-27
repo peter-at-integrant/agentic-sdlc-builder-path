@@ -155,12 +155,30 @@ export async function runMatcher(opts: {
   }
 
   for (let i = 0; i < 14; i++) {
-    const resp = await client.messages.create({
+    const resp = await client.beta.messages.create({
       model,
       max_tokens: 2500,
-      system,
-      tools: TOOL_DEFS as unknown as Anthropic.Tool[],
-      messages,
+      system: system as any,
+      tools: TOOL_DEFS as any,
+      messages: messages as any,
+      betas: ['context-management-2025-06-27'],
+      // Lever #4: context editing as a SAFETY VALVE, not an always-on optimizer.
+      // WanderMatch gathers all candidates' data then composes one final shortlist,
+      // so aggressively clearing tool results would starve the final step. Instead
+      // this only fires on a runaway loop (>30k input tokens) and keeps the 6 most
+      // recent tool uses — so a normal batched run never triggers it (nothing safe
+      // to clear) and the shortlist is never degraded.
+      context_management: {
+        edits: [
+          {
+            type: 'clear_tool_uses_20250919',
+            trigger: { type: 'input_tokens', value: 30000 },
+            keep: { type: 'tool_uses', value: 6 },
+            clear_at_least: { type: 'input_tokens', value: 3000 },
+            clear_tool_inputs: true,
+          },
+        ],
+      },
     })
 
     const u = resp.usage
@@ -172,8 +190,15 @@ export async function runMatcher(opts: {
       output: u.output_tokens ?? 0,
     })
 
+    // Surface context-edit activity in the trace (a benchmark signal for lever #4).
+    const cleared = (resp.context_management?.applied_edits ?? []).reduce(
+      (s, e) => s + ('cleared_input_tokens' in e ? (e.cleared_input_tokens ?? 0) : 0),
+      0,
+    )
+    if (cleared > 0) emit({ kind: 'tool_result', label: 'context edit (lever #4)', detail: `cleared ${cleared} input tokens` })
+
     if (resp.stop_reason === 'tool_use') {
-      messages.push({ role: 'assistant', content: resp.content })
+      messages.push({ role: 'assistant', content: resp.content as unknown as Anthropic.ContentBlockParam[] })
       const results: Anthropic.ToolResultBlockParam[] = []
       for (const block of resp.content) {
         if (block.type === 'text' && block.text.trim()) {

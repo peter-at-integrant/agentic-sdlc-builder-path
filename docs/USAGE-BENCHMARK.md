@@ -30,7 +30,7 @@ Estimate, not billing · per-browser only (not your real account total) · Wande
 |---|---|---|---|
 | 1 | **Prompt caching** — `cache_control` on system + tool defs (stable prefix) | `cache_read` ↑↑, cost ↓↓ (biggest win in a 5–8 round loop) | **✅ applied** (`matcher.ts`, ephemeral breakpoint on the system block; caches tools+system prefix) |
 | 2 | **Fewer round-trips** — parallel tool calls / fewer candidates (8→4–5) | round-trips ↓ | **✅ applied** (batching directive in the system prompt: enrich many candidates per turn, run tools in parallel. Candidate-count reduction 8→5 *deferred* — it trades breadth, so kept as a separate opt-in) |
-| 3 | **Leaner tool-result payloads** | cumulative input ↓ | planned |
+| 3 | **Leaner tool-result payloads** | cumulative input ↓ | **✅ applied (minor)** — dropped schema-duplicated / derivable fields (`resolved_country`, `currency`, `scope`). **Low headroom**: payloads were already compact, so the benchmark says this lever isn't the bottleneck (the re-sent prefix was — see #1). Kept `source`/notes for transparency. |
 | 4 | **Context editing** — clear consumed `tool_result` blocks | later-round input ↓ | planned |
 | 5 | **Model / max_tokens / effort tuning** | cost ↓ (quality trade-off) | planned |
 

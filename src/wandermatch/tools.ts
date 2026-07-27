@@ -83,8 +83,8 @@ async function getClimate(location: string, country?: string, month?: number) {
   if (!highs.length) return { error: 'no_climate_data', location: place.name }
   const avg = (a: number[]) => Math.round((a.reduce((s, x) => s + (x ?? 0), 0) / a.length) * 10) / 10
   return {
+    // location already carries the country; resolved_country would duplicate it.
     location: [place.name, place.country].filter(Boolean).join(', '),
-    resolved_country: place.country ?? null,
     geocode_note,
     month: mm,
     avg_high_c: avg(highs),
@@ -97,7 +97,8 @@ async function getClimate(location: string, country?: string, month?: number) {
 function getCost(city: string) {
   const row = COST[city.trim().toLowerCase()]
   if (!row) return { city, daily_cost_usd: null, source: 'seeded-stub', note: 'no seed data for this city' }
-  return { city, daily_cost_usd: row, currency: 'USD', scope: 'on-the-ground (excl. airfare)', source: 'seeded-stub' }
+  // currency (USD) + scope (on-the-ground, excl. airfare) are in the tool schema — omit to keep the payload lean.
+  return { city, daily_cost_usd: row, source: 'seeded-stub' }
 }
 
 function getFare(origin: string, city: string) {
@@ -106,7 +107,7 @@ function getFare(origin: string, city: string) {
   }
   const row = FARE[city.trim().toLowerCase()]
   if (!row) return { origin, city, roundtrip_usd: null, source: 'seeded-stub', note: 'no fare data for this destination' }
-  return { origin, city, roundtrip_usd: row, currency: 'USD', source: 'seeded-stub' }
+  return { origin, city, roundtrip_usd: row, source: 'seeded-stub' }
 }
 
 function getAdvisory(country: string) {

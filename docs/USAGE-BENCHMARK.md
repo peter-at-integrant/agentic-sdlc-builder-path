@@ -29,7 +29,7 @@ Estimate, not billing · per-browser only (not your real account total) · Wande
 | # | Lever | Expected signal | Status |
 |---|---|---|---|
 | 1 | **Prompt caching** — `cache_control` on system + tool defs (stable prefix) | `cache_read` ↑↑, cost ↓↓ (biggest win in a 5–8 round loop) | **✅ applied** (`matcher.ts`, ephemeral breakpoint on the system block; caches tools+system prefix) |
-| 2 | **Fewer round-trips** — parallel tool calls / fewer candidates (8→4–5) | round-trips ↓ | planned |
+| 2 | **Fewer round-trips** — parallel tool calls / fewer candidates (8→4–5) | round-trips ↓ | **✅ applied** (batching directive in the system prompt: enrich many candidates per turn, run tools in parallel. Candidate-count reduction 8→5 *deferred* — it trades breadth, so kept as a separate opt-in) |
 | 3 | **Leaner tool-result payloads** | cumulative input ↓ | planned |
 | 4 | **Context editing** — clear consumed `tool_result` blocks | later-round input ↓ | planned |
 | 5 | **Model / max_tokens / effort tuning** | cost ↓ (quality trade-off) | planned |

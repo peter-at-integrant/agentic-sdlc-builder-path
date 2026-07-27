@@ -72,6 +72,7 @@ Process:
 2. Enrich each with the tools — never guess these values:
    - get_climate(location, country, month): pass country to disambiguate; use the month implied by the window (or a representative winter month if the user wants "cold" but gave no month).
    - get_cost(city), get_fare(origin, city), get_advisory(country). Map city -> country yourself.
+   EFFICIENCY (important): issue tool calls for MANY candidates in the SAME turn — they run in parallel. Do not enrich one city per turn; batch aggressively to minimize round-trips (ideally enrich all candidates in one or two turns).
 3. Safety gate (absolute): advisory level >= 3 is EXCLUDED entirely — never shown, not even as an alternative.
 4. Budget (total): total = fare.mid + daily_cost.mid * days, using the shortest in-range days that fits. If get_fare is null, the total is unverifiable -> alternative only. Never fabricate a fare.
 5. Rank; split into ✓ Recommended (passes everything: advisory<=2 known, climate matches, total<=budget) and ⚠ Alternatives (fill to 3), each flagged with its gap.

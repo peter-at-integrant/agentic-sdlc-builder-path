@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MODELS, type ModelId, getApiKey, setApiKey, clearApiKey } from '../lib/keyStore'
-import type { Pick } from '../wandermatch/matcher'
+import type { Pick, TraceEntry } from '../wandermatch/matcher'
 
 function Chips({
   options,
@@ -73,7 +73,8 @@ export default function WanderMatch() {
   const [saved, setSaved] = useState(() => !!getApiKey())
   const [model, setModel] = useState<ModelId>('claude-opus-4-8')
   const [running, setRunning] = useState(false)
-  const [progress, setProgress] = useState<string[]>([])
+  const [trace, setTrace] = useState<TraceEntry[]>([])
+  const [showDebug, setShowDebug] = useState(false)
   const [error, setError] = useState('')
   const [picks, setPicks] = useState<Pick[] | null>(null)
   const [actions, setActions] = useState<string[]>([])
@@ -86,7 +87,7 @@ export default function WanderMatch() {
     setPicks(null)
     setActions([])
     setRaw('')
-    setProgress([])
+    setTrace([])
     setRunning(true)
     const { runMatcher, describeError } = await import('../wandermatch/matcher')
     const { enforce } = await import('../wandermatch/validate')
@@ -103,7 +104,7 @@ export default function WanderMatch() {
         origin: origin.trim(),
         trip_length_days: { min: Number(tripMin), max: Number(tripMax || tripMin) },
       }
-      const r = await runMatcher({ apiKey: key.trim(), model, profile, onProgress: (m) => setProgress((p) => [...p, m]) })
+      const r = await runMatcher({ apiKey: key.trim(), model, profile, onEvent: (e) => setTrace((t) => [...t, e]) })
       const enforced = enforce(r.picks)
       setPicks(enforced.picks)
       setActions(enforced.actions)
@@ -243,9 +244,12 @@ export default function WanderMatch() {
         <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400">
           <div className="mb-1 font-medium text-slate-600 dark:text-slate-300">Agent working (tool-use loop)…</div>
           <ul className="space-y-0.5 font-mono">
-            {progress.slice(-8).map((p, i) => (
-              <li key={i}>→ {p}</li>
-            ))}
+            {trace
+              .filter((e) => e.kind === 'tool_use')
+              .slice(-8)
+              .map((e, i) => (
+                <li key={i}>→ {e.label}({(e.detail ?? '').replace(/\s+/g, ' ').slice(0, 50)})</li>
+              ))}
           </ul>
         </div>
       )}
@@ -291,6 +295,48 @@ export default function WanderMatch() {
         <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-1 text-xs text-slate-400">Couldn't parse a structured shortlist — raw output:</div>
           <pre className="overflow-x-auto whitespace-pre-wrap text-xs text-slate-600 dark:text-slate-300">{raw}</pre>
+        </div>
+      )}
+
+      {/* Debug panel — the raw AI conversation + tool-use loop */}
+      {trace.length > 0 && (
+        <div className="mt-4">
+          <button
+            onClick={() => setShowDebug((s) => !s)}
+            className="text-xs font-medium text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+          >
+            {showDebug ? 'Hide' : 'Show'} debug log — AI messages &amp; tool calls ({trace.length} events)
+          </button>
+          {showDebug && (
+            <div className="mt-2 max-h-96 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950 p-3">
+              {trace.map((e, i) => {
+                const head =
+                  e.kind === 'assistant'
+                    ? '🤖 assistant'
+                    : e.kind === 'tool_use'
+                      ? `🔧 tool_use · ${e.label}`
+                      : e.kind === 'tool_result'
+                        ? `📊 ${e.label}`
+                        : `✅ ${e.label}`
+                const color =
+                  e.kind === 'tool_use'
+                    ? 'text-sky-400'
+                    : e.kind === 'tool_result'
+                      ? 'text-emerald-400'
+                      : e.kind === 'final'
+                        ? 'text-amber-400'
+                        : 'text-slate-200'
+                return (
+                  <div key={i} className="mb-2 border-b border-slate-800/60 pb-2 last:mb-0 last:border-0">
+                    <div className={`font-mono text-[11px] font-semibold ${color}`}>{head}</div>
+                    {e.detail && (
+                      <pre className="mt-0.5 whitespace-pre-wrap font-mono text-[11px] leading-4 text-slate-400">{e.detail}</pre>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>

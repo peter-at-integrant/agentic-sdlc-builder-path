@@ -5,7 +5,7 @@ import { TOOL_DEFS, runTool } from './tools'
 // The live matcher — a real tool-use loop in the browser (BYO key). Claude
 // proposes candidates, calls the data tools itself, applies the rules, and
 // returns a two-tier shortlist. Dynamically imported so the SDK stays out of
-// the main bundle.
+// the main bundle. Emits a full trace for the debug panel.
 
 export interface Pick {
   destination: string
@@ -30,6 +30,12 @@ export interface Profile {
   climate: string
   origin: string
   trip_length_days: { min: number; max: number }
+}
+
+export interface TraceEntry {
+  kind: 'assistant' | 'tool_use' | 'tool_result' | 'final'
+  label: string
+  detail?: string
 }
 
 const SYSTEM = `You are the WanderMatch matcher. Given a traveler profile, return 3 destinations ranked by fit.
@@ -59,7 +65,7 @@ function extractJson(text: string): string {
 
 export interface RunResult {
   picks: Pick[]
-  toolCalls: string[]
+  trace: TraceEntry[]
   raw: string
 }
 
@@ -67,11 +73,15 @@ export async function runMatcher(opts: {
   apiKey: string
   model: ModelId
   profile: Profile
-  onProgress?: (msg: string) => void
+  onEvent?: (e: TraceEntry) => void
 }): Promise<RunResult> {
-  const { apiKey, model, profile, onProgress } = opts
+  const { apiKey, model, profile, onEvent } = opts
   const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true })
-  const toolCalls: string[] = []
+  const trace: TraceEntry[] = []
+  const emit = (e: TraceEntry) => {
+    trace.push(e)
+    onEvent?.(e)
+  }
 
   const messages: Anthropic.MessageParam[] = [
     { role: 'user', content: `Traveler profile:\n${JSON.stringify(profile, null, 2)}\n\nProduce the shortlist.` },
@@ -90,11 +100,12 @@ export async function runMatcher(opts: {
       messages.push({ role: 'assistant', content: resp.content })
       const results: Anthropic.ToolResultBlockParam[] = []
       for (const block of resp.content) {
-        if (block.type === 'tool_use') {
-          const label = `${block.name}(${JSON.stringify(block.input).slice(0, 60)})`
-          toolCalls.push(label)
-          onProgress?.(`calling ${label}`)
+        if (block.type === 'text' && block.text.trim()) {
+          emit({ kind: 'assistant', label: 'assistant', detail: block.text.trim() })
+        } else if (block.type === 'tool_use') {
+          emit({ kind: 'tool_use', label: block.name, detail: JSON.stringify(block.input, null, 2) })
           const out = await runTool(block.name, block.input as any)
+          emit({ kind: 'tool_result', label: `${block.name} → result`, detail: JSON.stringify(out, null, 2) })
           results.push({ type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(out) })
         }
       }
@@ -107,12 +118,13 @@ export async function runMatcher(opts: {
       .map((b) => b.text)
       .join('\n')
       .trim()
+    emit({ kind: 'final', label: 'final output', detail: raw })
     try {
       const parsed = JSON.parse(extractJson(raw))
       const picks: Pick[] = Array.isArray(parsed?.picks) ? parsed.picks : []
-      return { picks, toolCalls, raw }
+      return { picks, trace, raw }
     } catch {
-      return { picks: [], toolCalls, raw }
+      return { picks: [], trace, raw }
     }
   }
   throw new Error('Matcher did not converge (too many tool rounds).')

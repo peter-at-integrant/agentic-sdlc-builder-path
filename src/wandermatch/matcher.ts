@@ -114,6 +114,14 @@ export async function runMatcher(opts: {
     { role: 'user', content: `Traveler profile:\n${JSON.stringify(profile, null, 2)}\n\nProduce the shortlist.` },
   ]
 
+  // Optimization lever #1: cache the static prefix (tools + system prompt).
+  // In a tool-use loop this prefix is re-sent on every round-trip; a cache
+  // breakpoint on the system block lets rounds 2+ re-read it at ~0.1x instead of
+  // reprocessing it at full input price. The benchmark measures the delta.
+  const system: Anthropic.TextBlockParam[] = [
+    { type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } },
+  ]
+
   // Usage benchmark accounting.
   const perMessage: MsgUsage[] = []
   let toolCalls = 0
@@ -144,7 +152,7 @@ export async function runMatcher(opts: {
     const resp = await client.messages.create({
       model,
       max_tokens: 2500,
-      system: SYSTEM,
+      system,
       tools: TOOL_DEFS as unknown as Anthropic.Tool[],
       messages,
     })

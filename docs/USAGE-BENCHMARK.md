@@ -26,15 +26,19 @@ price. Opus 4.8 $5/$25, Haiku 4.5 $1/$5 per 1M in/out. Estimate only — Anthrop
 Estimate, not billing · per-browser only (not your real account total) · WanderMatch only.
 
 ## Optimization backlog (targets the benchmark measures against)
-| # | Lever | Expected signal |
-|---|---|---|
-| 1 | **Prompt caching** — `cache_control` on system + tool defs (stable prefix) | `cache_read` ↑↑, cost ↓↓ (biggest win in a 5–8 round loop) |
-| 2 | **Fewer round-trips** — parallel tool calls / fewer candidates (8→4–5) | round-trips ↓ |
-| 3 | **Leaner tool-result payloads** | cumulative input ↓ |
-| 4 | **Context editing** — clear consumed `tool_result` blocks | later-round input ↓ |
-| 5 | **Model / max_tokens / effort tuning** | cost ↓ (quality trade-off) |
+| # | Lever | Expected signal | Status |
+|---|---|---|---|
+| 1 | **Prompt caching** — `cache_control` on system + tool defs (stable prefix) | `cache_read` ↑↑, cost ↓↓ (biggest win in a 5–8 round loop) | **✅ applied** (`matcher.ts`, ephemeral breakpoint on the system block; caches tools+system prefix) |
+| 2 | **Fewer round-trips** — parallel tool calls / fewer candidates (8→4–5) | round-trips ↓ | planned |
+| 3 | **Leaner tool-result payloads** | cumulative input ↓ | planned |
+| 4 | **Context editing** — clear consumed `tool_result` blocks | later-round input ↓ | planned |
+| 5 | **Model / max_tokens / effort tuning** | cost ↓ (quality trade-off) | planned |
 
 **Method:** record a **baseline** run → apply one lever → compare the **delta** in the dashboard.
+
+> **Note — this is extra-mile.** Neither the usage benchmark nor prompt caching is part of the required
+> AI Phase 1 scope (the ten builder primitives + capstone PoC). They demonstrate *applying* a learned
+> concept — measure the agentic loop, then optimize it — on the real PoC, and measuring the result.
 
 ## Implementation
 - `matcher.ts` accumulates `usage` (incl. cache fields) per round-trip + timing → returns a usage summary.

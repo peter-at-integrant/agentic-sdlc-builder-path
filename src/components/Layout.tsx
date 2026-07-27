@@ -79,6 +79,7 @@ export default function Layout() {
               ['/modules', 'Modules'],
               ['/poc', 'PoC Builder'],
               ['/example', 'Example'],
+              ['/wandermatch', 'WanderMatch'],
               ['/glossary', 'Glossary'],
               ['/dashboard', 'Dashboard'],
             ].map(([to, label]) => (

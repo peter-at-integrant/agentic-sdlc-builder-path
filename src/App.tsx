@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard'
 import GlossaryPage from './pages/GlossaryPage'
 import PocBuilder from './pages/PocBuilder'
 import Example from './pages/Example'
+import WanderMatch from './pages/WanderMatch'
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/glossary" element={<GlossaryPage />} />
           <Route path="/poc" element={<PocBuilder />} />
           <Route path="/example" element={<Example />} />
+          <Route path="/wandermatch" element={<WanderMatch />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

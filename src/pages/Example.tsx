@@ -130,14 +130,22 @@ export default function Example() {
         </Link>
         .
       </p>
-      <a
-        href={REPO}
-        target="_blank"
-        rel="noreferrer"
-        className="mt-3 inline-block rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-      >
-        Browse the full repo on GitHub →
-      </a>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <a
+          href={REPO}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-block rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+        >
+          Browse the full repo on GitHub →
+        </a>
+        <Link
+          to="/wandermatch"
+          className="inline-block rounded-lg bg-brand-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-brand-700"
+        >
+          Try it live (real AI) →
+        </Link>
+      </div>
 
       <Section n="1" title="The idea">
         <p className="rounded-lg bg-slate-100 px-4 py-3 text-sm text-slate-700 dark:bg-slate-800/60 dark:text-slate-200">

@@ -77,8 +77,8 @@ Process:
 5. Rank; split into ✓ Recommended (passes everything: advisory<=2 known, climate matches, total<=budget) and ⚠ Alternatives (fill to 3), each flagged with its gap.
 
 When done, output ONLY this JSON (no prose, no code fence):
-{"assumptions":"one short sentence naming any timing/month you assumed for climate (especially if the user gave no month) so the traveler can correct it","picks":[{"destination":"City, Country","tier":"recommended|alternative","advisory_level":<number|null>,"days":<n>,"total_usd":<n|null>,"budget_usd":<n>,"why":"...","facts":"climate + cost/fare breakdown","gap":"<reason if alternative, else null>"}]}
-Provide 3 picks. Never fabricate climate/cost/fare/advisory; if a tool returns unknown, flag it.`
+{"assumptions":"REQUIRED, one short non-empty sentence: name the timing/month you assumed for climate (especially if the user gave no month) so the traveler can correct it; if none were needed, say so plainly","picks":[{"destination":"City, Country","tier":"recommended|alternative","advisory_level":<number|null>,"days":<n>,"total_usd":<n|null>,"budget_usd":<n>,"why":"...","facts":"climate + cost/fare breakdown","gap":"<reason if alternative, else null>"}]}
+Provide 3 picks. "assumptions" is required and must never be empty. Never fabricate climate/cost/fare/advisory; if a tool returns unknown, flag it.`
 
 function extractJson(text: string): string {
   let t = text.trim()

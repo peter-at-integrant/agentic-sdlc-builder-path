@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { MODELS, type ModelId, getApiKey, setApiKey, clearApiKey } from '../lib/keyStore'
 import type { Pick, TraceEntry, UsageSummary } from '../wandermatch/matcher'
@@ -86,6 +86,12 @@ export default function WanderMatch() {
   const [actions, setActions] = useState<string[]>([])
   const [assumptions, setAssumptions] = useState('')
   const [raw, setRaw] = useState('')
+
+  const windowRef = useRef<HTMLInputElement>(null)
+  const focusWindow = () => {
+    windowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    windowRef.current?.focus()
+  }
 
   const canRun = saved && key && origin.trim() && Number(budget) > 0 && Number(tripMin) > 0 && !running
 
@@ -259,7 +265,7 @@ export default function WanderMatch() {
             <input value={origin} onChange={(e) => setOrigin(e.target.value)} placeholder="e.g. Cairo (CAI)" className={`w-full ${input}`} />
           </Field>
           <Field label="Target window (optional)">
-            <input value={windowText} onChange={(e) => setWindowText(e.target.value)} placeholder="e.g. late Dec – early Jan" className={`w-full ${input}`} />
+            <input ref={windowRef} value={windowText} onChange={(e) => setWindowText(e.target.value)} placeholder="e.g. late Dec – early Jan" className={`w-full ${input}`} />
           </Field>
         </div>
 
@@ -312,13 +318,19 @@ export default function WanderMatch() {
         </div>
       )}
 
-      {/* Clarifier — surface the agent's timing assumption so the traveler can correct it */}
-      {assumptions && picks && picks.length > 0 && (
+      {/* Clarifier — always shown with results; surfaces the agent's timing assumption */}
+      {picks && picks.length > 0 && (
         <div className="mt-4 rounded-xl border border-sky-200 bg-sky-50/60 p-3 text-sm dark:border-sky-900/50 dark:bg-sky-900/15">
           <span className="font-medium text-sky-800 dark:text-sky-300">💭 Worth your call:</span>{' '}
-          <span className="text-sky-700 dark:text-sky-300/90">{assumptions}</span>{' '}
+          <span className="text-sky-700 dark:text-sky-300/90">
+            {assumptions || 'No special timing assumptions were needed — climate was matched to your stated window.'}
+          </span>{' '}
           <span className="text-sky-600/80 dark:text-sky-400/80">
-            — edit the <strong>Target window</strong> above and re-match to override.
+            — edit the{' '}
+            <button onClick={focusWindow} className="font-medium underline hover:text-sky-800 dark:hover:text-sky-200">
+              Target window
+            </button>{' '}
+            above and re-match to override.
           </span>
         </div>
       )}

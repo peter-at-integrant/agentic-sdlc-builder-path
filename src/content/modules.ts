@@ -831,6 +831,88 @@ That's 7 layers — well past the ≥3 minimum. A support-triage or personal-aut
       },
     ],
   },
+  {
+    id: 'optimization',
+    num: 11,
+    sg: 'Bonus',
+    title: 'Measure & optimize the loop',
+    tagline: 'Benchmark token usage, then cut it — evidence-first.',
+    mnemonic: 'efficiency',
+    baseline: 'Most builders ship an agentic loop but never measure its token cost — so they optimize by guesswork, or not at all.',
+    why: `**This is a bonus module — not one of the ten required primitives.** It captures an *extra-mile* discipline applied to the WanderMatch PoC: measure the loop, then optimize it.
+
+A tool-use loop re-sends its **entire prefix** — system prompt, tool schemas, and the growing message history — on **every** round-trip. Cost compounds with rounds. But you can't optimize what you don't measure.
+
+The PoC ships a live **usage benchmark** (\`/usage\`): per-run tokens, cache-hit rate, ≈cost, and a labelled-run ledger with **delta-vs-baseline**. Optimize one lever, re-run, read the delta.`,
+    whenNot: `| Optimize | Don't |
+|---|---|
+| After measuring a real bottleneck | Before you have numbers (premature) |
+| A lever with headroom (the re-sent prefix) | A field-trim that saves ~10 tokens |
+| A loop that runs many rounds | A single-shot call |
+| When cost/latency actually hurts | When it would degrade output quality |
+
+**Decision line:** *measure → optimize the bottleneck → skip low-ROI levers, with evidence.*`,
+    quality: `- **Single variable** — change one lever per run so the delta is attributable.
+- **Reproducible** — same inputs, labelled runs, a fixed baseline to compare against.
+- **Honest cost** — token counts × published prices is an *estimate*, not billing; label it "≈".
+- **Cache anatomy** — track uncached input / \`cache_read\` / \`cache_creation\` separately, not just "input tokens" — the split is where the signal is.
+- **No silent caps** — if you defer a lever (e.g. candidate count), say so.`,
+    composition: `**Prompt caching** targets the same static prefix that **MCP** tool schemas and **rules** contribute to — they all live in the cached prefix. **Sub-agent** model choice (Haiku vs Opus is ~5× on price) is a cost lever. **Hooks** run *outside* the loop, so they add zero per-round tokens — a reason to prefer a deterministic hook over an extra model turn. The benchmark measures the whole composed path, not one primitive.`,
+    reference: `The four applied levers (full writeup in the PoC's \`docs/USAGE-BENCHMARK.md\`):
+
+1. **Prompt caching** — \`cache_control: { type: 'ephemeral' }\` on the system block caches the tools+system prefix; rounds 2+ re-read it at ~0.1×. The biggest win.
+2. **Fewer round-trips** — instruct the model to **batch** tool calls (many candidates per turn) instead of one-per-turn. Measured by the \`rounds\` count.
+3. **Leaner tool payloads** — drop fields that duplicate the tool schema. *Low headroom* if payloads are already compact.
+4. **Context editing** — Anthropic's \`clear_tool_uses_20250919\` (beta \`context-management-2025-06-27\`) as a runaway **safety valve**, configured to never starve a gather-then-compose loop.
+
+Try it: run a match on **/wandermatch** (toggle prompt caching off, then on), then read the delta on **/usage**.`,
+    lab: `1. On **/wandermatch**, uncheck *prompt caching*, label the run \`baseline\`, and match.
+2. Check *prompt caching*, keep the same inputs, label \`cached\`, and match.
+3. On **/usage**, set \`baseline\` as the baseline and read the **Δ** (cost + tokens) on the \`cached\` row.
+4. Note the **cache-hit rate** climb and the **rounds** count (proof batching worked).
+5. Write one sentence: which lever moved the number, and which you'd skip — with the evidence.`,
+    selfCheck: [
+      'Why: Why does token cost compound in a multi-round tool-use loop?',
+      'When/not: When is optimizing premature or actively harmful?',
+      'Quality: What makes one benchmark run comparable to another?',
+      'Composition: Which primitives feed the cached prefix, and why do hooks add no per-round tokens?',
+    ],
+    quiz: [
+      {
+        q: 'In a tool-use loop, the biggest repeated cost is usually:',
+        options: [
+          'The final answer',
+          'Re-sending the system + tools + history prefix every round',
+          'The tool code executing',
+          'The user prompt',
+        ],
+        answer: 1,
+        explain: 'The whole prefix is re-processed each round-trip; caching it is the highest-leverage fix.',
+      },
+      {
+        q: 'Prompt caching helps most when:',
+        options: [
+          'The call is single-shot',
+          'The loop runs many rounds over a stable prefix',
+          'You change the system prompt every turn',
+          'You disable tools',
+        ],
+        answer: 1,
+        explain: 'A stable, cached prefix re-read across many rounds is where cache_read savings compound.',
+      },
+      {
+        q: 'The right response to a low-headroom lever (e.g. trimming already-lean payloads) is:',
+        options: [
+          'Invest heavily anyway',
+          'Skip it and document why, with evidence',
+          'Hide that you skipped it',
+          'Always ship it as a headline win',
+        ],
+        answer: 1,
+        explain: 'Measure-first means optimizing the bottleneck and consciously skipping low-ROI levers — with evidence.',
+      },
+    ],
+  },
 ]
 
 export const moduleById = (id: string): Module | undefined => modules.find((m) => m.id === id)

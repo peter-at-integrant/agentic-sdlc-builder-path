@@ -38,6 +38,16 @@ export const glossary: GlossaryTerm[] = [
   { term: 'CI pipeline', group: 'Execution tiers', def: 'The agent invoked as a step in your build system, triggered by repo events; for build/test/PR gating.', moduleId: 'routines' },
   { term: 'Tier matrix', group: 'Execution tiers', def: 'A one-page mapping of each real task to its correct execution tier and why, without conflating products.', moduleId: 'routines' },
 
+  // Optimization (bonus / extra-mile)
+  { term: 'Tool-use loop', group: 'Optimization', def: 'The cycle where the model requests tools, code executes them, results are appended, and the model is called again — until it emits a final answer.', moduleId: 'optimization' },
+  { term: 'Round-trip', group: 'Optimization', def: 'One iteration of the tool-use loop: one API call plus the tool executions it triggers. Fewer round-trips = less re-sent context.', moduleId: 'optimization' },
+  { term: 'Prompt caching', group: 'Optimization', def: 'Marking a stable prefix (system + tools) with cache_control so later round-trips re-read it at ~0.1× input price instead of reprocessing it. The biggest cost lever in a multi-round loop.', moduleId: 'optimization' },
+  { term: 'Cache-hit rate', group: 'Optimization', def: 'cache_read ÷ total input tokens — how much of the input was served from cache. Climbs after round 1 once a prefix is cached.', moduleId: 'optimization' },
+  { term: 'cache_read / cache_creation', group: 'Optimization', def: 'Cached input read back (~0.1× input price) vs the write that first populates the cache (~1.25×). Tracking them separately is where the optimization signal lives.', moduleId: 'optimization' },
+  { term: 'Context editing', group: 'Optimization', def: 'Clearing older tool results/uses from the context so they stop being re-sent. Anthropic ships clear_tool_uses; useful as a runaway safety valve, risky for gather-then-compose flows.', moduleId: 'optimization' },
+  { term: 'Usage benchmark', group: 'Optimization', def: 'An instrument that records per-run tokens, cache split, ≈cost, and round-trips so optimizations can be measured as a delta against a baseline. Estimates, not billing.', moduleId: 'optimization' },
+  { term: 'Token budget', group: 'Optimization', def: 'A per-run or cumulative ceiling on estimated spend, used to keep an agentic loop’s cost visible and bounded.', moduleId: 'optimization' },
+
   // Process
   { term: 'SMART', group: 'Process', def: 'Goal framing: Specific, Measurable, Achievable, Relevant, Time-bound.' },
   { term: 'Depth review', group: 'Process', def: 'A gate that marks a competency complete only when you can defend it on four dimensions: why, when/not, quality, composition.' },
@@ -47,7 +57,7 @@ export const glossary: GlossaryTerm[] = [
   { term: 'Golden-path', group: 'Process', def: 'The primary, intended success flow used to exemplify a skill or test a plugin.' },
 ]
 
-export const glossaryGroups = ['Core', 'Primitives', 'Distribution', 'Execution tiers', 'Process']
+export const glossaryGroups = ['Core', 'Primitives', 'Distribution', 'Execution tiers', 'Optimization', 'Process']
 
 const termMap = new Map(glossary.map((g) => [g.term.toLowerCase(), g]))
 export const findTerm = (t: string): GlossaryTerm | undefined => termMap.get(t.toLowerCase())

@@ -187,6 +187,7 @@ export default function WanderMatch() {
               <span className="font-medium text-slate-500 dark:text-slate-300">{inputs.budget ? `${inputs.currency} ${Number(inputs.budget).toLocaleString()}` : 'drag or type'}</span>
               <span>$5,000+</span>
             </div>
+            <p className="mt-1 text-[10px] text-slate-400">Used as a target band — the top pick aims for a rich trip around ~70% of this, never over.</p>
           </Field>
           <Field label="Trip length (days)">
             <div className="flex items-center gap-2 text-sm">

@@ -17,6 +17,8 @@ export interface Pick {
   why?: string
   facts?: string
   gap?: string | null
+  /** a higher-end aspirational option surfaced when the budget has clear headroom */
+  premium?: boolean
 }
 
 export interface Profile {
@@ -76,9 +78,10 @@ Process:
 3. Safety gate (absolute): advisory level >= 3 is EXCLUDED entirely — never shown, not even as an alternative.
 4. Budget (total): total = fare.mid + daily_cost.mid * days, using the shortest in-range days that fits. If get_fare is null, the total is unverifiable -> alternative only. Never fabricate a fare.
 5. Rank; split into ✓ Recommended (passes everything: advisory<=2 known, climate matches, total<=budget) and ⚠ Alternatives (fill to 3), each flagged with its gap.
+6. Budget is a CEILING, not a target — never pad the trip just to spend it; the best-fit, best-value pick is a valid #1. BUT if the budget comfortably exceeds the best value option (roughly total <= budget/2), include at least ONE premium pick: a more aspirational, higher-end destination that still fits the profile and stays within budget, using more of the available headroom. Mark it "premium":true and say in "why" that it's a higher-end option the generous budget unlocks. A premium pick must still be safe (advisory<=2) and within budget. Value picks are not premium.
 
 When done, output ONLY this JSON (no prose, no code fence):
-{"assumptions":"REQUIRED, one short non-empty sentence: name the timing/month you assumed for climate (especially if the user gave no month) so the traveler can correct it; if none were needed, say so plainly","picks":[{"destination":"City, Country","tier":"recommended|alternative","advisory_level":<number|null>,"days":<n>,"total_usd":<n|null>,"budget_usd":<n>,"why":"...","facts":"climate + cost/fare breakdown","gap":"<reason if alternative, else null>"}]}
+{"assumptions":"REQUIRED, one short non-empty sentence: name the timing/month you assumed for climate (especially if the user gave no month) so the traveler can correct it; if none were needed, say so plainly","picks":[{"destination":"City, Country","tier":"recommended|alternative","advisory_level":<number|null>,"days":<n>,"total_usd":<n|null>,"budget_usd":<n>,"why":"...","facts":"climate + cost/fare breakdown","gap":"<reason if alternative, else null>","premium":<true if this is the higher-end budget-headroom pick, else omit>}]}
 Provide 3 picks. "assumptions" is required and must never be empty. Never fabricate climate/cost/fare/advisory; if a tool returns unknown, flag it.`
 
 function extractJson(text: string): string {

@@ -290,6 +290,14 @@ export default function WanderMatch() {
                   <span className={`rounded px-2 py-0.5 text-[11px] font-medium ${rec ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
                     {rec ? '✓ Recommended' : '⚠ Alternative'}
                   </span>
+                  {p.premium && (
+                    <span
+                      className="rounded px-2 py-0.5 text-[11px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                      title="A higher-end option your budget headroom unlocks"
+                    >
+                      ★ Premium
+                    </span>
+                  )}
                   {typeof p.total_usd === 'number' && <span className="ml-auto text-xs text-slate-400">~${p.total_usd}{p.days ? ` · ${p.days}d` : ''}{typeof p.advisory_level === 'number' ? ` · adv ${p.advisory_level}` : ''}</span>}
                 </div>
                 {p.why && <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">{p.why}</p>}
